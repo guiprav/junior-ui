@@ -1,0 +1,11 @@
+<!doctype html>
+<meta charset="utf-u">
+<script src="testBundle.js"></script>
+
+Who are you? <input jr-value.bind="username">
+<br>Hello there, <span jr-textcontent.bind="username"></span>
+
+<script>
+  jr.mockState.username = 'Someone...';
+  jr.init();
+</script>
