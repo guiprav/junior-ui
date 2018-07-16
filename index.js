@@ -200,9 +200,64 @@ jr.updateListEl = el => {
     return;
   }
 
-  console.warn(
-    `[jr] Not implemented: Initialized jr-list update.`,
-  );
+  let listDiff = jr.diffLists(oldList, list);
+  console.warn(listDiff);
+};
+
+// TODO: Review computational complexity if too slow
+// on realistic benchmarks.
+jr.diffLists = (a, b) => {
+  let diff = {
+    removed: [],
+    moved: [],
+    added: [],
+  };
+
+  for (let [i, x] of a.entries()) {
+    let newIndex = b.findIndex((y, j) => {
+      if (y !== x) {
+        return false;
+      }
+
+      return !diff.moved.some(
+        z => z.value === y && z.to !== j,
+      );
+    });
+
+    if (newIndex === -1) {
+      diff.removed.push({
+        value: x,
+        from: i,
+      });
+
+      continue;
+    }
+
+    if (b[i] !== x) {
+      diff.moved.push({
+        value: x,
+        from: i,
+        to: newIndex,
+      });
+    }
+  }
+
+  for (let [i, x] of b.entries()) {
+    if (a[i] === x) {
+      continue;
+    }
+
+    if (diff.moved.some(y => y.value == x && y.to === i)) {
+      continue;
+    }
+
+    diff.added.push({
+      value: x,
+      to: i,
+    });
+  }
+
+  return diff;
 };
 
 jr.initListEl = ({ el, listAttr, list, iteratorName }) => {
