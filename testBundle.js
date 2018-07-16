@@ -231,6 +231,23 @@ jr.updateListEl = el => {
     return;
   }
 
+  let noDiff = true;
+
+  if (list.length === oldList.length) {
+    for (let [i, v] of list.entries()) {
+      if (oldList[i] === v) {
+        continue;
+      }
+
+      noDiff = false;
+      break;
+    }
+  }
+
+  if (noDiff) {
+    return;
+  }
+
   let diff = jr.diffLists(oldList, list);
 
   let oldLis = Array.from(el.children);
