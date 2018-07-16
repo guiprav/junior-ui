@@ -97,14 +97,40 @@ jr.initEl = el => {
   el.addEventListener('change', jr.onChange);
 };
 
-jr.findStateEl = el => {
-  let stateEl = el;
+jr.getState = el => {
+  let state = { refs: {} };
 
-  while (stateEl && !stateEl.jrState) {
-    stateEl = stateEl.parentElement;
+  {
+    let cursorEl = el;
+
+    while (cursorEl && !cursorEl.jrState) {
+      cursorEl = cursorEl.parentElement;
+    }
+
+    state.closest = cursorEl ? cursorEl.jrState : {};
+
+    for (let [k, v] of Object.entries(state.closest)) {
+      if (state.refs[k]) {
+        continue;
+      }
+
+      state.refs[k] = {
+        type: 'state',
+        obj: cursorEl.jrState,
+        key: k,
+        value: v,
+      };
+    }
   }
 
-  return stateEl;
+  state.get = k => {
+    let ref = state.refs[k];
+    return ref && ref.value;
+  };
+
+  state.set = (k, v) => state.closest[k] = v;
+
+  return state;
 };
 
 jr.onChange = ev => {
@@ -116,31 +142,25 @@ jr.onChange = ev => {
   }
 
   let attr = indexEntry.attrs['jr-value.bind'];
-  let stateEl = jr.findStateEl(el);
+  let state = jr.getState(el);
 
-  if (!stateEl) {
-    return;
-  }
-
-  stateEl.jrState[attr.value] = el.value;
+  state.set(attr.value, el.value);
   jr.update();
 };
 
 jr.updateEl = el => {
-  let stateEl = jr.findStateEl(el);
-  let state = stateEl ? stateEl.jrState : {};
-
+  let state = jr.getState(el);
   let indexEntry = jr.index.get(el);
 
   for (let attr of Object.values(indexEntry.attrs)) {
     let computed = attr.value = el.getAttribute(attr.name);
 
-    for (let [k, v] of Object.entries(state)) {
-      computed = computed.replace(`\${${k}}`, v);
+    for (let [k, ref] of Object.entries(state.refs)) {
+      computed = computed.replace(`\${${k}}`, ref.value);
     }
 
     if (attr.name.endsWith('.bind')) {
-      computed = state[computed];
+      computed = state.get(computed);
     }
 
     if (computed === attr.computed) {
