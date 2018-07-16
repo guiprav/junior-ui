@@ -111,7 +111,21 @@ jr.getState = el => {
   {
     let cursorEl = el;
 
-    while (cursorEl && !cursorEl.jrState) {
+    while (cursorEl) {
+      if (cursorEl.jrListItem) {
+        let { jrListItem } = cursorEl;
+
+        state.refs[jrListItem.iteratorName] = {
+          type: 'iterator',
+          key: jrListItem.iteratorName,
+          value: jrListItem.value,
+        };
+      }
+
+      if (cursorEl.jrState) {
+        break;
+      }
+
       cursorEl = cursorEl.parentElement;
     }
 
@@ -156,11 +170,75 @@ jr.onChange = ev => {
   jr.update();
 };
 
+jr.updateListEl = el => {
+  let state = jr.getState(el);
+
+  let indexEntry = jr.index.get(el);
+  let listAttr = indexEntry.attrs['jr-list'];
+
+  let listExpr =
+    listAttr.value = el.getAttribute('jr-list');
+
+  let parsedListExpr =
+    /^for ([^ ]+) of (.+)$/.exec(listExpr);
+
+  if (!parsedListExpr) {
+    console.error(`[jr] Invalid jr-list expression in`, el);
+    return;
+  }
+
+  let iteratorName = parsedListExpr[1];
+  let iterableKey = parsedListExpr[2];
+
+  let oldList = listAttr.computed;
+  let list = Array.from(state.get(iterableKey));
+
+  if (!oldList) {
+    listAttr.computed = list;
+    jr.initListEl({ el, listAttr, list, iteratorName });
+
+    return;
+  }
+
+  console.warn(
+    `[jr] Not implemented: Initialized jr-list update.`,
+  );
+};
+
+jr.initListEl = ({ el, listAttr, list, iteratorName }) => {
+  let refLi = el.firstElementChild;
+  el.innerHTML = '';
+
+  for (let x of list) {
+    let li = refLi.cloneNode(true);
+
+    li.jrListItem = {
+      iteratorName,
+      value: x,
+    };
+
+    el.appendChild(li);
+
+    $(li).find('*').addBack().each((i, el) => {
+      if (!document.contains(el)) {
+        return;
+      }
+
+      jr.initEl(el);
+    });
+  }
+};
+
 jr.updateEl = el => {
   let state = jr.getState(el);
   let indexEntry = jr.index.get(el);
 
   for (let attr of Object.values(indexEntry.attrs)) {
+    if (attr.name === 'jr-list') {
+      jr.updateListEl(el);
+      continue;
+    }
+
     let computed = attr.value = el.getAttribute(attr.name);
 
     for (let [k, ref] of Object.entries(state.refs)) {

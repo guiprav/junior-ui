@@ -5,6 +5,15 @@
 <div class="testRoot">
   Who are you? <input jr-value.bind="username">
   <br>Hello there, <span jr-textcontent.bind="username"></span>
+
+  <ul class="fruitList" jr-list="for fruit of fruits">
+    <li>
+      <a
+        jr-href="https://www.wikipedia.org/wiki/${fruit}"
+        jr-textcontent.bind="fruit"
+      ></a>
+    </li>
+  </ul>
 </div>
 
 <script>
@@ -15,6 +24,7 @@
     username: 'Someone...',
     hello: 'world',
     abc: 123,
+    fruits: ['Apple', 'Lemon', 'Orange'],
   };
 
   jr.init();
