@@ -13,6 +13,9 @@ jr.arrayShuffle = a => {
   return a;
 };
 
+jr.escapeRegExp = str =>
+  str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+
 jr.index = new Map();
 
 jr.init = () => {
@@ -159,6 +162,16 @@ jr.getState = el => {
   state.get = k => {
     let ref = state.refs[k];
     return ref && ref.value;
+  };
+
+  state.eval = expr => {
+    let keys = expr.split('.');
+    let rootKey = keys.shift();
+
+    return keys.reduce(
+      (obj, key) => obj && obj[key],
+      state.get(rootKey),
+    );
   };
 
   state.set = (k, v) => state.closest[k] = v;
@@ -340,12 +353,30 @@ jr.updateEl = el => {
 
     let computed = attr.value = el.getAttribute(attr.name);
 
-    for (let [k, ref] of Object.entries(state.refs)) {
-      computed = computed.replace(`\${${k}}`, ref.value);
+    let interpRe = /\${([^}]+)}/g;
+    let interpList = [];
+
+    while (true) {
+      let reRes = interpRe.exec(computed);
+
+      if (!reRes) {
+        break;
+      }
+
+      interpList.push(reRes[1]);
+    }
+
+    for (let expr of interpList) {
+      let value = state.eval(expr);
+
+      computed = computed.replace(
+        new RegExp(jr.escapeRegExp(`\${${expr}}`), 'g'),
+        value,
+      );
     }
 
     if (attr.name.endsWith('.bind')) {
-      computed = state.get(computed);
+      computed = state.eval(computed);
     }
 
     if (computed === attr.computed) {

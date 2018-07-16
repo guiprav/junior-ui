@@ -5,15 +5,41 @@
 <div class="testRoot">
   Who are you? <input jr-value.bind="username">
   <br>Hello there, <span jr-textcontent.bind="username"></span>
+  <br><br>
 
-  <ul class="fruitList" jr-list="for fruit of fruits">
-    <li>
-      <a
-        jr-href="https://www.wikipedia.org/wiki/${fruit}"
-        jr-textcontent.bind="fruit"
-      ></a>
-    </li>
-  </ul>
+  <div>
+    <em>Fruits:</em>
+    <ul class="fruitList" jr-list="for fruit of fruits">
+      <li>
+        <a
+          jr-href="https://www.wikipedia.org/wiki/${fruit}"
+          jr-textcontent.bind="fruit"
+        ></a>
+      </li>
+    </ul>
+  </div>
+
+  <div>
+    <em>Complex fruits:</em>
+    <ul
+      class="complexFruitList"
+      jr-list="for fruit of complexFruits"
+    >
+      <li>
+        <a
+          jr-href="https://www.wikipedia.org/wiki/${fruit.name}"
+          jr-textcontent.bind="fruit.name"
+        ></a>
+
+        is
+
+        <a
+          jr-href="https://www.wikipedia.org/wiki/${fruit.color}"
+          jr-textcontent.bind="fruit.color"
+        ></a>.
+      </li>
+    </ul>
+  </div>
 </div>
 
 <script>
@@ -24,7 +50,14 @@
     username: 'Someone...',
     hello: 'world',
     abc: 123,
+
     fruits: ['Apple', 'Lemon', 'Orange'],
+
+    complexFruits: [
+      { name: 'Apple', color: 'Red' },
+      { name: 'Lemon', color: 'Green' },
+      { name: 'Orange', color: 'Orange' },
+    ],
   };
 
   jr.init();
