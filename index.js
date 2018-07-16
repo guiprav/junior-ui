@@ -7,7 +7,13 @@ jr.index = new Map();
 jr.init = () => {
   jr.index = new Map();
 
-  $('*').each((i, el) => jr.initEl(el));
+  $('*').each((i, el) => {
+    if (!document.contains(el)) {
+      return;
+    }
+
+    jr.initEl(el);
+  });
 
   jr.observer = new MutationSummary({
     queries: [{ all: true }],
@@ -91,8 +97,11 @@ jr.initEl = el => {
   jr.index.set(el, indexEntry);
   jr.updateEl(el);
 
-  el.addEventListener('keydown', jr.onChange);
-  el.addEventListener('keyup', jr.onChange);
+  if (el.tagName === 'INPUT') {
+    el.addEventListener('keydown', jr.onChange);
+    el.addEventListener('keyup', jr.onChange);
+  }
+
   el.addEventListener('change', jr.onChange);
 };
 
