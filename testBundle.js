@@ -3,11 +3,6 @@ let MutationSummary = require('mutation-summary');
 
 window.jr = {};
 
-jr.mockState = {
-  hello: 'world',
-  abc: 123,
-};
-
 jr.index = new Map();
 
 jr.init = () => {
@@ -97,6 +92,16 @@ jr.initEl = el => {
   el.addEventListener('change', jr.onChange);
 };
 
+jr.findStateEl = el => {
+  let stateEl = el;
+
+  while (stateEl && !stateEl.jrState) {
+    stateEl = stateEl.parentElement;
+  }
+
+  return stateEl;
+};
+
 jr.onChange = ev => {
   let el = ev.target;
   let indexEntry = jr.index.get(el);
@@ -106,23 +111,31 @@ jr.onChange = ev => {
   }
 
   let attr = indexEntry.attrs['jr-value.bind'];
+  let stateEl = jr.findStateEl(el);
 
-  jr.mockState[attr.value] = el.value;
+  if (!stateEl) {
+    return;
+  }
+
+  stateEl.jrState[attr.value] = el.value;
   jr.update();
 };
 
 jr.updateEl = el => {
+  let stateEl = jr.findStateEl(el);
+  let state = stateEl ? stateEl.jrState : {};
+
   let indexEntry = jr.index.get(el);
 
   for (let attr of Object.values(indexEntry.attrs)) {
     let computed = attr.value = el.getAttribute(attr.name);
 
-    for (let [k, v] of Object.entries(jr.mockState)) {
+    for (let [k, v] of Object.entries(state)) {
       computed = computed.replace(`\${${k}}`, v);
     }
 
     if (attr.name.endsWith('.bind')) {
-      computed = jr.mockState[computed];
+      computed = state[computed];
     }
 
     if (computed === attr.computed) {

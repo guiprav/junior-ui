@@ -2,10 +2,20 @@
 <meta charset="utf-u">
 <script src="testBundle.js"></script>
 
-Who are you? <input jr-value.bind="username">
-<br>Hello there, <span jr-textcontent.bind="username"></span>
+<div class="testRoot">
+  Who are you? <input jr-value.bind="username">
+  <br>Hello there, <span jr-textcontent.bind="username"></span>
+</div>
 
 <script>
-  jr.mockState.username = 'Someone...';
+  window.find = document.querySelector.bind(document);
+  window.findAll = document.querySelectorAll.bind(document);
+
+  find('.testRoot').jrState = {
+    username: 'Someone...',
+    hello: 'world',
+    abc: 123,
+  };
+
   jr.init();
 </script>
