@@ -2,6 +2,12 @@ let MutationSummary = require('mutation-summary');
 
 window.jr = {};
 
+jr.find = (selector, el) =>
+  Array.from((el || document).querySelectorAll(selector));
+
+jr.findFirst = (selector, el) =>
+  (el || document).querySelector(selector);
+
 jr.arrayShuffle = a => {
   var j, x, i;
   for (i = a.length - 1; i > 0; i--) {
@@ -21,13 +27,13 @@ jr.index = new Map();
 jr.init = () => {
   jr.index = new Map();
 
-  $('*').each((i, el) => {
+  for (let el of jr.find('*')) {
     if (!document.contains(el)) {
-      return;
+      continue;
     }
 
     jr.initEl(el);
-  });
+  }
 
   jr.observer = new MutationSummary({
     queries: [{ all: true }],
@@ -331,13 +337,13 @@ jr.initListEl = ({ el, listAttr, list, iteratorName }) => {
 
     el.appendChild(li);
 
-    $(li).find('*').addBack().each((i, el) => {
+    for (let el of [li, ...jr.find('*', li)]) {
       if (!document.contains(el)) {
-        return;
+        continue;
       }
 
       jr.initEl(el);
-    });
+    }
   }
 };
 
