@@ -3,6 +3,17 @@ let MutationSummary = require('mutation-summary');
 
 window.jr = {};
 
+jr.arrayShuffle = a => {
+  var j, x, i;
+  for (i = a.length - 1; i > 0; i--) {
+    j = Math.floor(Math.random() * (i + 1));
+    x = a[i];
+    a[i] = a[j];
+    a[j] = x;
+  }
+  return a;
+};
+
 jr.index = new Map();
 
 jr.init = () => {
@@ -192,55 +203,78 @@ jr.updateListEl = el => {
   let iterableKey = parsedListExpr[2];
 
   let oldList = listAttr.computed;
-  let list = Array.from(state.get(iterableKey));
+
+  let list = listAttr.computed =
+    Array.from(state.get(iterableKey));
 
   if (!oldList) {
-    listAttr.computed = list;
     jr.initListEl({ el, listAttr, list, iteratorName });
-
     return;
   }
 
-  let listDiff = jr.diffLists(oldList, list);
-  console.warn(listDiff);
+  let diff = jr.diffLists(oldList, list);
+
+  let oldLis = Array.from(el.children);
+  el.innerHTML = '';
+
+  for (let x of diff) {
+    switch (x.type) {
+      case 'existing':
+        el.appendChild(oldLis[x.from]);
+        break;
+
+      case 'new': {
+        let newLi = el.jrRefListItem.cloneNode(true);
+
+        newLi.jrListItem = {
+          iteratorName,
+          value: x.value,
+        };
+
+        el.appendChild(newLi);
+
+        break;
+      }
+
+      default:
+        throw new Error('???');
+        break;
+    }
+  }
 };
 
 // TODO: Review computational complexity if too slow
 // on realistic benchmarks.
 jr.diffLists = (a, b) => {
-  let diff = {
-    removed: [],
+  let diffs = {
     moved: [],
     added: [],
   };
 
   for (let [i, x] of a.entries()) {
+    if (b[i] === x) {
+      continue;
+    }
+
     let newIndex = b.findIndex((y, j) => {
       if (y !== x) {
         return false;
       }
 
-      return !diff.moved.some(
+      return !diffs.moved.some(
         z => z.value === y && z.to !== j,
       );
     });
 
     if (newIndex === -1) {
-      diff.removed.push({
-        value: x,
-        from: i,
-      });
-
       continue;
     }
 
-    if (b[i] !== x) {
-      diff.moved.push({
-        value: x,
-        from: i,
-        to: newIndex,
-      });
-    }
+    diffs.moved.push({
+      value: x,
+      from: i,
+      to: newIndex,
+    });
   }
 
   for (let [i, x] of b.entries()) {
@@ -248,21 +282,31 @@ jr.diffLists = (a, b) => {
       continue;
     }
 
-    if (diff.moved.some(y => y.value == x && y.to === i)) {
+    if (diffs.moved.some(y => y.value == x && y.to === i)) {
       continue;
     }
 
-    diff.added.push({
+    diffs.added.push({
       value: x,
       to: i,
     });
   }
 
-  return diff;
+  return b.map((x, i) => {
+    if (a[i] === x) {
+      return { type: 'existing', from: i };
+    }
+
+    let moved = diffs.moved.find(y => y.to === i);
+
+    return moved
+      ? { type: 'existing', from: moved.from }
+      : { type: 'new', value: x };
+  });
 };
 
 jr.initListEl = ({ el, listAttr, list, iteratorName }) => {
-  let refLi = el.firstElementChild;
+  let refLi = el.jrRefListItem = el.firstElementChild;
   el.innerHTML = '';
 
   for (let x of list) {
