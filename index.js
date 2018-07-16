@@ -60,6 +60,11 @@ jr.init = () => {
 };
 
 jr.initEl = el => {
+  if (jr.index.has(el)) {
+    console.warn(`[jr]`, el, `is already initialized.`);
+    return;
+  }
+
   let indexEntry;
 
   for (let i = 0; i < el.attributes.length; ++i) {
@@ -143,7 +148,9 @@ jr.updateEl = el => {
 
     attr.computed = computed;
 
-    let targetName = attr.name.slice('jr-'.length).replace(/\.bind$/, '');
+    let targetName = attr.name
+      .slice('jr-'.length)
+      .replace(/\.bind$/, '');
 
     if (targetName === 'textcontent') {
       el.textContent = computed;
