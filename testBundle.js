@@ -1,27 +1,28 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
+exports.arrayShuffle = a => {
+  for (let i = a.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1));
+    let x = a[i];
+    a[i] = a[j];
+    a[j] = x;
+  }
+
+  return a;
+};
+
+let escapeRe = /([.*+?^=!:${}()|\[\]\/\\])/g;
+
+exports.escapeRegExp =
+  str => str.replace(escapeRe, '\\$1');
+
+
+},{}],2:[function(require,module,exports){
 let MutationSummary = require('mutation-summary');
 
 window.jr = {};
 
-jr.find = (selector, el) =>
-  Array.from((el || document).querySelectorAll(selector));
-
-jr.findFirst = (selector, el) =>
-  (el || document).querySelector(selector);
-
-jr.arrayShuffle = a => {
-  var j, x, i;
-  for (i = a.length - 1; i > 0; i--) {
-    j = Math.floor(Math.random() * (i + 1));
-    x = a[i];
-    a[i] = a[j];
-    a[j] = x;
-  }
-  return a;
-};
-
-jr.escapeRegExp = str =>
-  str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+Object.assign(jr, require('./helpers'));
+Object.assign(jr, require('./selectors'));
 
 jr.index = new Map();
 
@@ -435,7 +436,7 @@ jr.update = () => {
   }
 };
 
-},{"mutation-summary":2}],2:[function(require,module,exports){
+},{"./helpers":1,"./selectors":4,"mutation-summary":3}],3:[function(require,module,exports){
 // Copyright 2011 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -1835,7 +1836,65 @@ var MutationSummary = (function () {
 
 module.exports = MutationSummary
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
+function elArrayFind(selector) {
+  let matches = new Set();
+
+  for (let thisEl of this) {
+    for (let thatEl of exports.find(selector, thisEl)) {
+      matches.add(thatEl);
+    }
+  }
+
+  return Array.from(matches);
+}
+
+function elArrayFindFirst(selector) {
+  for (let thisEl of this) {
+    let thatEl = exports.findFirst(selector, thisEl);
+
+    if (thatEl) {
+      return thatEl;
+    }
+  }
+
+  return null;
+}
+
+function elFind(selector) {
+  return exports.find(selector, this);
+}
+
+function elFindFirst(selector) {
+  return exports.findFirst(selector, this);
+}
+
+exports.find = (selector, el) => {
+  let ret = Array.from(
+    (el || document).querySelectorAll(selector),
+  );
+
+  ret.find = elArrayFind;
+  ret.findFirst = elArrayFindFirst;
+
+  return ret;
+};
+
+exports.findFirst = (selector, el) => {
+  let foundEl = (el || document).querySelector(selector);
+
+  return foundEl && new Proxy(foundEl, {
+    get: (target, prop) => {
+      switch (prop) {
+        case 'find': return elFind;
+        case 'findFirst': return elFindFirst;
+        default: return target[prop];
+      }
+    },
+  });
+};
+
+},{}],5:[function(require,module,exports){
 require('./index');
 
-},{"./index":1}]},{},[3]);
+},{"./index":2}]},{},[5]);

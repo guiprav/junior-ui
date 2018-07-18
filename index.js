@@ -2,25 +2,8 @@ let MutationSummary = require('mutation-summary');
 
 window.jr = {};
 
-jr.find = (selector, el) =>
-  Array.from((el || document).querySelectorAll(selector));
-
-jr.findFirst = (selector, el) =>
-  (el || document).querySelector(selector);
-
-jr.arrayShuffle = a => {
-  var j, x, i;
-  for (i = a.length - 1; i > 0; i--) {
-    j = Math.floor(Math.random() * (i + 1));
-    x = a[i];
-    a[i] = a[j];
-    a[j] = x;
-  }
-  return a;
-};
-
-jr.escapeRegExp = str =>
-  str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+Object.assign(jr, require('./helpers'));
+Object.assign(jr, require('./selectors'));
 
 jr.index = new Map();
 
