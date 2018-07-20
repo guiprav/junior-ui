@@ -19,10 +19,107 @@ exports.escapeRegExp =
 },{}],2:[function(require,module,exports){
 let MutationSummary = require('mutation-summary');
 
-window.jr = {};
+window.jr = target => {
+  if (typeof target === 'string') {
+    return jr.find(target);
+  }
+
+  if (typeof target[Symbol.iterator] === 'function') {
+    let ret = Array.from(target);
+
+    ret.jr = new JrProp(ret);
+
+    for (let el of ret) {
+      el.jr = new JrProp(el);
+    }
+
+    return ret;
+  }
+
+  target.jr = new JrProp(target);
+
+  return target;
+};
+
+class JrProp {
+  constructor(ctx) {
+    if (!Array.isArray(ctx) && ctx.jr) {
+      Object.assign(this, ctx.jr);
+    }
+
+    this.ctx = ctx;
+  }
+
+  find(selector) {
+    if (Array.isArray(this.ctx)) {
+      let matches = new Set();
+
+      for (let thisEl of this.ctx) {
+        for (let thatEl of jr.find(selector, thisEl)) {
+          matches.add(thatEl);
+        }
+      }
+
+      return Array.from(matches);
+    }
+    else {
+      return jr.find(selector, this.ctx);
+    }
+  }
+
+  findFirst(selector) {
+    if (Array.isArray(this.ctx)) {
+      for (let thisEl of this.ctx) {
+        let thatEl = jr.findFirst(selector, thisEl);
+
+        if (thatEl) {
+          return thatEl;
+        }
+      }
+
+      return null;
+    }
+    else {
+      return jr.findFirst(selector, this.ctx);
+    }
+  }
+
+  setScope(scope) {
+    if (Array.isArray(this.ctx)) {
+      throw new Error(
+        `Cannot set scope for multiple elements at once`,
+      );
+    }
+
+    return this.scope = scope;
+  }
+}
+
+jr.find = (selector, el) => {
+  let ret = Array.from(
+    (el || document).querySelectorAll(selector),
+  );
+
+  ret.jr = new JrProp(ret);
+
+  for (let foundEl of ret) {
+    foundEl.jr = new JrProp(foundEl);
+  }
+
+  return ret;
+};
+
+jr.findFirst = (selector, el) => {
+  let ret = (el || document).querySelector(selector);
+
+  if (ret) {
+    ret.jr = new JrProp(ret);
+  }
+
+  return ret;
+};
 
 Object.assign(jr, require('./helpers'));
-Object.assign(jr, require('./selectors'));
 
 jr.index = new Map();
 
@@ -127,64 +224,64 @@ jr.initEl = el => {
   el.addEventListener('change', jr.onChange);
 };
 
-jr.getState = el => {
-  let state = { refs: {} };
+jr.getScope = el => {
+  let scope = { refs: {} };
 
   {
     let cursorEl = el;
 
     while (cursorEl) {
-      if (cursorEl.jrListItem) {
-        let { jrListItem } = cursorEl;
+      if (cursorEl.jr && cursorEl.jr.listItem) {
+        let { listItem } = cursorEl.jr;
 
-        state.refs[jrListItem.iteratorName] = {
+        scope.refs[listItem.iteratorName] = {
           type: 'iterator',
-          key: jrListItem.iteratorName,
-          value: jrListItem.value,
+          key: listItem.iteratorName,
+          value: listItem.value,
         };
       }
 
-      if (cursorEl.jrState) {
+      if (cursorEl.jr && cursorEl.jr.scope) {
         break;
       }
 
       cursorEl = cursorEl.parentElement;
     }
 
-    state.closest = cursorEl ? cursorEl.jrState : {};
+    scope.closest = cursorEl ? cursorEl.jr.scope : {};
 
-    for (let [k, v] of Object.entries(state.closest)) {
-      if (state.refs[k]) {
+    for (let [k, v] of Object.entries(scope.closest)) {
+      if (scope.refs[k]) {
         continue;
       }
 
-      state.refs[k] = {
-        type: 'state',
-        obj: cursorEl.jrState,
+      scope.refs[k] = {
+        type: 'scope',
+        obj: cursorEl.jr.scope,
         key: k,
         value: v,
       };
     }
   }
 
-  state.get = k => {
-    let ref = state.refs[k];
+  scope.get = k => {
+    let ref = scope.refs[k];
     return ref && ref.value;
   };
 
-  state.eval = expr => {
+  scope.eval = expr => {
     let keys = expr.split('.');
     let rootKey = keys.shift();
 
     return keys.reduce(
       (obj, key) => obj && obj[key],
-      state.get(rootKey),
+      scope.get(rootKey),
     );
   };
 
-  state.set = (k, v) => state.closest[k] = v;
+  scope.set = (k, v) => scope.closest[k] = v;
 
-  return state;
+  return scope;
 };
 
 jr.onChange = ev => {
@@ -196,14 +293,14 @@ jr.onChange = ev => {
   }
 
   let attr = indexEntry.attrs['jr-value.bind'];
-  let state = jr.getState(el);
+  let scope = jr.getScope(el);
 
-  state.set(attr.value, el.value);
+  scope.set(attr.value, el.value);
   jr.update();
 };
 
 jr.updateListEl = el => {
-  let state = jr.getState(el);
+  let scope = jr.getScope(el);
 
   let indexEntry = jr.index.get(el);
   let listAttr = indexEntry.attrs['jr-list'];
@@ -225,7 +322,7 @@ jr.updateListEl = el => {
   let oldList = listAttr.computed;
 
   let list = listAttr.computed =
-    Array.from(state.get(iterableKey));
+    Array.from(scope.get(iterableKey));
 
   if (!oldList) {
     jr.initListEl({ el, listAttr, list, iteratorName });
@@ -261,9 +358,9 @@ jr.updateListEl = el => {
         break;
 
       case 'new': {
-        let newLi = el.jrRefListItem.cloneNode(true);
+        let newLi = jr(el.jr.refListItem.cloneNode(true));
 
-        newLi.jrListItem = {
+        newLi.jr.listItem = {
           iteratorName,
           value: x.value,
         };
@@ -343,13 +440,13 @@ jr.diffLists = (a, b) => {
 };
 
 jr.initListEl = ({ el, listAttr, list, iteratorName }) => {
-  let refLi = el.jrRefListItem = el.firstElementChild;
+  let refLi = el.jr.refListItem = el.firstElementChild;
   el.innerHTML = '';
 
   for (let x of list) {
-    let li = refLi.cloneNode(true);
+    let li = jr(refLi.cloneNode(true));
 
-    li.jrListItem = {
+    li.jr.listItem = {
       iteratorName,
       value: x,
     };
@@ -367,7 +464,7 @@ jr.initListEl = ({ el, listAttr, list, iteratorName }) => {
 };
 
 jr.updateEl = el => {
-  let state = jr.getState(el);
+  let scope = jr.getScope(el);
   let indexEntry = jr.index.get(el);
 
   for (let attr of Object.values(indexEntry.attrs)) {
@@ -392,7 +489,7 @@ jr.updateEl = el => {
     }
 
     for (let expr of interpList) {
-      let value = state.eval(expr);
+      let value = scope.eval(expr);
 
       computed = computed.replace(
         new RegExp(jr.escapeRegExp(`\${${expr}}`), 'g'),
@@ -401,7 +498,7 @@ jr.updateEl = el => {
     }
 
     if (attr.name.endsWith('.bind')) {
-      computed = state.eval(computed);
+      computed = scope.eval(computed);
     }
 
     if (computed === attr.computed) {
@@ -436,7 +533,7 @@ jr.update = () => {
   }
 };
 
-},{"./helpers":1,"./selectors":4,"mutation-summary":3}],3:[function(require,module,exports){
+},{"./helpers":1,"mutation-summary":3}],3:[function(require,module,exports){
 // Copyright 2011 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -1837,64 +1934,6 @@ var MutationSummary = (function () {
 module.exports = MutationSummary
 
 },{}],4:[function(require,module,exports){
-function elArrayFind(selector) {
-  let matches = new Set();
-
-  for (let thisEl of this) {
-    for (let thatEl of exports.find(selector, thisEl)) {
-      matches.add(thatEl);
-    }
-  }
-
-  return Array.from(matches);
-}
-
-function elArrayFindFirst(selector) {
-  for (let thisEl of this) {
-    let thatEl = exports.findFirst(selector, thisEl);
-
-    if (thatEl) {
-      return thatEl;
-    }
-  }
-
-  return null;
-}
-
-function elFind(selector) {
-  return exports.find(selector, this);
-}
-
-function elFindFirst(selector) {
-  return exports.findFirst(selector, this);
-}
-
-exports.find = (selector, el) => {
-  let ret = Array.from(
-    (el || document).querySelectorAll(selector),
-  );
-
-  ret.find = elArrayFind;
-  ret.findFirst = elArrayFindFirst;
-
-  return ret;
-};
-
-exports.findFirst = (selector, el) => {
-  let foundEl = (el || document).querySelector(selector);
-
-  return foundEl && new Proxy(foundEl, {
-    get: (target, prop) => {
-      switch (prop) {
-        case 'find': return elFind;
-        case 'findFirst': return elFindFirst;
-        default: return target[prop];
-      }
-    },
-  });
-};
-
-},{}],5:[function(require,module,exports){
 require('./index');
 
-},{"./index":2}]},{},[5]);
+},{"./index":2}]},{},[4]);

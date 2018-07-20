@@ -43,7 +43,7 @@
 </div>
 
 <script>
-  jr.findFirst('.testRoot').jrState = {
+  jr.findFirst('.testRoot').jr.setScope({
     username: 'Someone...',
     hello: 'world',
     abc: 123,
@@ -55,7 +55,7 @@
       { name: 'Lemon', color: 'Green' },
       { name: 'Orange', color: 'Orange' },
     ],
-  };
+  });
 
   jr.init();
 </script>
