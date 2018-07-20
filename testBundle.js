@@ -225,7 +225,7 @@ jr.initEl = el => {
 };
 
 jr.getScope = el => {
-  let scope = { refs: {} };
+  let scope = { refs: {}, els: [] };
 
   {
     let cursorEl = el;
@@ -242,26 +242,33 @@ jr.getScope = el => {
       }
 
       if (cursorEl.jr && cursorEl.jr.scope) {
-        break;
+        let cursorScope = cursorEl.jr.scope;
+
+        scope.els.push(cursorEl);
+
+        for (let [k, v] of Object.entries(cursorScope)) {
+          if (scope.refs[k]) {
+            continue;
+          }
+
+          scope.refs[k] = {
+            type: 'scope',
+            el: cursorEl,
+            obj: cursorScope,
+            key: k,
+            value: v,
+          };
+        }
       }
 
       cursorEl = cursorEl.parentElement;
     }
+  }
 
-    scope.closest = cursorEl ? cursorEl.jr.scope : {};
+  scope.hash = {};
 
-    for (let [k, v] of Object.entries(scope.closest)) {
-      if (scope.refs[k]) {
-        continue;
-      }
-
-      scope.refs[k] = {
-        type: 'scope',
-        obj: cursorEl.jr.scope,
-        key: k,
-        value: v,
-      };
-    }
+  for (let [k, ref] of Object.entries(scope.refs)) {
+    scope.hash[k] = ref.value;
   }
 
   scope.get = k => {
@@ -279,7 +286,28 @@ jr.getScope = el => {
     );
   };
 
-  scope.set = (k, v) => scope.closest[k] = v;
+  scope.set = (k, v) => {
+    let ref = scope.refs[k];
+
+    if (ref) {
+      return scope.refs[k].obj[k] = v;
+    }
+
+    let el = scope.els[0];
+    let elScope = el.jr.scope;
+
+    elScope[k] = v;
+
+    scope.refs[k] = {
+      type: 'scope',
+      el,
+      obj: elScope,
+      key: k,
+      value: v,
+    };
+
+    return v;
+  };
 
   return scope;
 };

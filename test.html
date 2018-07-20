@@ -43,8 +43,11 @@
 </div>
 
 <script>
-  jr.findFirst('.testRoot').jr.setScope({
+  jr.findFirst('body').jr.setScope({
     username: 'Someone...',
+  });
+
+  jr.findFirst('.testRoot').jr.setScope({
     hello: 'world',
     abc: 123,
 
