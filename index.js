@@ -1,6 +1,6 @@
 let MutationSummary = require('mutation-summary');
 
-window.jr = target => {
+let jr = module.exports = exports = target => {
   if (typeof target === 'string') {
     return jr.find(target);
   }

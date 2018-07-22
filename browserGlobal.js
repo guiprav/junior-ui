@@ -1,0 +1,1 @@
+window.jr = require('.');
