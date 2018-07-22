@@ -4,9 +4,8 @@
 
 Junior is like someone with a weird "dom" fetish, [Mithril](https://mithril.js.org), and [jQuery](https://jquery.org) had a very ugly threesome-born baby.
 
-Demo / test page is at [n2liquid.github.io/junior-ui/test.html](https://n2liquid.github.io/junior-ui/test.html).
-
-Good ole to-do list demo app is at [n2liquid.github.io/junior-ui/todoDemo.html](https://n2liquid.github.io/junior-ui/todoDemo.html).
+* Good ol' to-do list demo app is at [n2liquid.github.io/junior-ui/todoDemo.html](https://n2liquid.github.io/junior-ui/todoDemo.html).
+* Test page is at [n2liquid.github.io/junior-ui/test.html](https://n2liquid.github.io/junior-ui/test.html).
 
 ## Installation
 
