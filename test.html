@@ -1,20 +1,24 @@
 <!doctype html>
-<meta charset="utf-u">
+<meta charset="utf-8">
 <script src="bundle.js"></script>
 
 <div class="testRoot">
   <p>
     Who are you? <input jr-value.bind="username">
-    <br>Hello there,
-    <span jr-textcontent.bind="username"></span>
   </p>
 
-  <p jr-if="username === 'Someone...'">
-    You're so mysterious...
-  </p>
+  <p jr-if="username">
+    Hello there, <span jr-textcontent.bind="username"></span>.
 
-  <p jr-if="username === 'Junior'">
-    You're a good fellow!
+    <span jr-if="
+      username.toLowerCase().includes('someone')
+    ">
+      You're so mysterious...
+    </span>
+
+    <span jr-if="username.toLowerCase() === 'junior'">
+      You're a good fellow!
+    </span>
   </p>
 
   <div>
@@ -50,11 +54,15 @@
       </li>
     </ul>
   </div>
+
+  <button class="shuffleBtn">
+    Shuffle
+  </button>
 </div>
 
 <script>
   jr.findFirst('body').jr.setScope({
-    username: 'Someone...',
+    username: '',
   });
 
   jr.findFirst('.testRoot').jr.setScope({
@@ -71,4 +79,15 @@
   });
 
   jr.init();
+</script>
+
+<script>
+  jr.findFirst('.shuffleBtn').addEventListener(
+    'click', ev => {
+      let scopeHash = jr.getScope(ev.target).hash;
+
+      jr.arrayShuffle(scopeHash.fruits);
+      jr.arrayShuffle(scopeHash.complexFruits);
+    },
+  );
 </script>

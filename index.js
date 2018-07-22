@@ -65,6 +65,24 @@ class JrProp {
     }
   }
 
+  get parentElements() {
+    if (Array.isArray(this.ctx)) {
+      throw new Error(
+        `jr.parentElements only works with single elements`,
+      );
+    }
+
+    let ret = [];
+    let cursorEl = this.ctx;
+
+    while (cursorEl.parentElement) {
+      ret.push(cursorEl.parentElement);
+      cursorEl = cursorEl.parentElement;
+    }
+
+    return ret;
+  }
+
   setScope(scope) {
     if (Array.isArray(this.ctx)) {
       throw new Error(
@@ -129,21 +147,24 @@ jr.init = () => {
         jr.initEl(el);
       }
 
+      removedElsLoop:
       for (let el of summary.removed) {
-        if (el.jr) {
-          let { commentAnchor, originalNode } = el.jr;
+        el = jr(el);
 
-          if (commentAnchor) {
-            continue;
+        for (let el2 of [el, ...el.jr.parentElements]) {
+          if (el2.jr.commentAnchor) {
+            continue removedElsLoop;
           }
+        }
 
-          if (
-            originalNode
-            && !document.contains(originalNode)
-          ) {
-            jr.index.delete(originalNode);
-            continue;
-          }
+        let { originalNode } = el.jr;
+
+        if (
+          originalNode
+          && !document.contains(originalNode)
+        ) {
+          jr.index.delete(originalNode);
+          continue removedElsLoop;
         }
 
         jr.index.delete(el);
@@ -179,6 +200,8 @@ jr.init = () => {
       }
     },
   });
+
+  document.addEventListener('click', () => jr.update());
 };
 
 jr.initEl = el => {
@@ -334,7 +357,7 @@ jr.updateIfEl = el => {
 
   let { evaluatedBefore } = ifAttr;
   let oldResult = ifAttr.computed;
-  let result = scope.eval(condExpr);
+  let result = !!scope.eval(condExpr);
 
   if (evaluatedBefore && result === oldResult) {
     return;
