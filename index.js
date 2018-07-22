@@ -130,6 +130,22 @@ jr.init = () => {
       }
 
       for (let el of summary.removed) {
+        if (el.jr) {
+          let { commentAnchor, originalNode } = el.jr;
+
+          if (commentAnchor) {
+            continue;
+          }
+
+          if (
+            originalNode
+            && !document.contains(originalNode)
+          ) {
+            jr.index.delete(originalNode);
+            continue;
+          }
+        }
+
         jr.index.delete(el);
       }
 
@@ -166,8 +182,7 @@ jr.init = () => {
 };
 
 jr.initEl = el => {
-  if (jr.index.has(el)) {
-    console.warn(`[jr]`, el, `is already initialized.`);
+  if (jr.index.has(el) || el.nodeName === '#comment') {
     return;
   }
 
@@ -242,7 +257,9 @@ jr.getScope = el => {
         }
       }
 
-      cursorEl = cursorEl.parentElement;
+      cursorEl = !cursorEl.jr || !cursorEl.jr.commentAnchor
+        ? cursorEl.parentElement
+        : cursorEl.jr.commentAnchor.parentElement;
     }
   }
 
@@ -305,6 +322,53 @@ jr.onChange = ev => {
 
   scope.set(attr.value, el.value);
   jr.update();
+};
+
+jr.updateIfEl = el => {
+  let scope = jr.getScope(el);
+
+  let indexEntry = jr.index.get(el);
+  let ifAttr = indexEntry.attrs['jr-if'];
+
+  let condExpr = ifAttr.value = el.getAttribute('jr-if');
+
+  let { evaluatedBefore } = ifAttr;
+  let oldResult = ifAttr.computed;
+  let result = scope.eval(condExpr);
+
+  if (evaluatedBefore && result === oldResult) {
+    return;
+  }
+
+  ifAttr.evaluatedBefore = true;
+  ifAttr.computed = result;
+
+  if (!evaluatedBefore && result) {
+    return;
+  }
+
+  if (result) {
+    indexEntry.commentAnchor.parentElement.replaceChild(
+      el, indexEntry.commentAnchor,
+    );
+
+    el.jr.commentAnchor = null;
+    indexEntry.commentAnchor = null;
+  }
+  else {
+    let anchor = document.createComment(
+      ` jr anchor for ${el.tagName.toLowerCase()} `,
+    );
+
+    anchor.jr = {
+      originalNode: el,
+    };
+
+    el.parentElement.replaceChild(anchor, el);
+
+    el.jr.commentAnchor = anchor;
+    indexEntry.commentAnchor = anchor;
+  }
 };
 
 jr.updateListEl = el => {
@@ -476,6 +540,11 @@ jr.updateEl = el => {
   let indexEntry = jr.index.get(el);
 
   for (let attr of Object.values(indexEntry.attrs)) {
+    if (attr.name === 'jr-if') {
+      jr.updateIfEl(el);
+      continue;
+    }
+
     if (attr.name === 'jr-list') {
       jr.updateListEl(el);
       continue;

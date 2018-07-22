@@ -3,9 +3,19 @@
 <script src="bundle.js"></script>
 
 <div class="testRoot">
-  Who are you? <input jr-value.bind="username">
-  <br>Hello there, <span jr-textcontent.bind="username"></span>
-  <br><br>
+  <p>
+    Who are you? <input jr-value.bind="username">
+    <br>Hello there,
+    <span jr-textcontent.bind="username"></span>
+  </p>
+
+  <p jr-if="username === 'Someone...'">
+    You're so mysterious...
+  </p>
+
+  <p jr-if="username === 'Junior'">
+    You're a good fellow!
+  </p>
 
   <div>
     <em>Fruits:</em>
