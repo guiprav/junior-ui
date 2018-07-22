@@ -6,6 +6,8 @@ Junior is like someone with a weird "dom" fetish, [Mithril](https://mithril.js.o
 
 Demo / test page is at [n2liquid.github.io/junior-ui/test.html](https://n2liquid.github.io/junior-ui/test.html).
 
+Good ole to-do list demo app is at [n2liquid.github.io/junior-ui/todoDemo.html](https://n2liquid.github.io/junior-ui/todoDemo.html).
+
 ## Installation
 
 Use `npm i -s junior-ui`, then `require('junior-ui/browserGlobal');`

@@ -1,0 +1,112 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Junior's To-Do List</title>
+<script src="todoDemoBundle.js"></script>
+
+<style>
+  html {
+    background-color: #f5f5f5;
+  }
+
+  .title {
+    color: #ead7d7;
+  }
+
+  .panel-block {
+    background-color: white;
+  }
+
+  .todos {
+    width: 500px;
+    margin: 0 auto;
+    margin-top: 50px;
+    text-align: center;
+  }
+
+  .todoToggleBtn {
+    width: 65px;
+    margin-right: 10px;
+  }
+
+  .done {
+    text-decoration: line-through;
+  }
+</style>
+
+<div class="todos">
+  <h1 class="title is-1">Junior's To-Do List</h1>
+
+  <div class="panel">
+    <div class="panel-block" style="margin-bottom: -1px">
+      <input
+        class="newTodoInput input"
+        placeholder="What needs to be done?"
+        jr-value.bind="newTodoDescription"
+      >
+    </div>
+
+    <div jr-list="for todo of todos">
+      <a jr-class="panel-block ${
+        !todo.done ? 'is-active' : ''
+      }">
+        <button
+          class="todoToggleBtn"
+          jr-textcontent.bind="!todo.done ? 'Done' : 'Undo'"
+        ></button>
+
+        <span
+          jr-class="${todo.done ? 'done' : ''}"
+          jr-textcontent.bind="todo.description"
+        ></span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  let root = jr.findFirst('.todos');
+
+  root.jr.setScope({
+    newTodoDescription: '',
+
+    todos: [
+      { description: `Keep everything refreshingly simple`, done: true },
+      { description: `Inflict jQuery nostalgia on people`, done: true },
+      { description: `Maybe port and run some benchmarks to Junior?`, done: false },
+      { description: `Optimize strictly as needed`, done: false },
+      { description: `Destroy React, Vue, Angular, etc.`, done: false },
+      { description: `Spare Mithril because it's cute`, done: false },
+    ],
+  });
+
+  root.addEventListener('keydown', ev => {
+    if (!ev.target.classList.contains('newTodoInput')) {
+      return;
+    }
+
+    if (ev.key !== 'Enter') {
+      return;
+    }
+
+    let scope = jr(ev.target).jr.getScope();
+
+    scope.hash.todos.push({
+      description: scope.hash.newTodoDescription,
+      done: false,
+    });
+
+    scope.set('newTodoDescription', '');
+    jr.update();
+  });
+
+  root.addEventListener('click', ev => {
+    if (!ev.target.classList.contains('todoToggleBtn')) {
+      return;
+    }
+
+    let { todo } = jr(ev.target).jr.getScope().hash;
+    todo.done = !todo.done;
+  });
+
+  jr.init();
+</script>

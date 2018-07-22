@@ -83,6 +83,16 @@ class JrProp {
     return ret;
   }
 
+  getScope() {
+    if (Array.isArray(this.ctx)) {
+      throw new Error(
+        `jr.getScope() only works with single elements`,
+      );
+    }
+
+    return jr.getScope(this.ctx);
+  }
+
   setScope(scope) {
     if (Array.isArray(this.ctx)) {
       throw new Error(
@@ -426,7 +436,10 @@ jr.updateListEl = el => {
 
   let noDiff = true;
 
-  if (list.length === oldList.length) {
+  if (list.length !== oldList.length) {
+    noDiff = false;
+  }
+  else {
     for (let [i, v] of list.entries()) {
       if (oldList[i] === v) {
         continue;
