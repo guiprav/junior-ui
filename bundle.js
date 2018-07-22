@@ -280,13 +280,12 @@ jr.getScope = el => {
   };
 
   scope.eval = expr => {
-    let keys = expr.split('.');
-    let rootKey = keys.shift();
+    let locals = Object.keys(scope.hash).join(', ');
 
-    return keys.reduce(
-      (obj, key) => obj && obj[key],
-      scope.get(rootKey),
-    );
+    return new Function('$jrScopeHash', `
+      let { ${locals} } = $jrScopeHash;
+      return (${expr});
+    `)(scope.hash);
   };
 
   scope.set = (k, v) => {
