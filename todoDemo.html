@@ -12,7 +12,7 @@
     color: #ead7d7;
   }
 
-  .panel-block {
+  .panel-block, .panel-tabs {
     background-color: white;
   }
 
@@ -51,12 +51,47 @@
       activeTodos.length ? 'antiquewhite' : 'aliceblue'
     };
   ">
-    <div class="panel-block" style="margin-bottom: -1px">
+    <div class="panel-block">
       <input
         class="newTodoInput input"
         placeholder="What needs to be done?"
         jr-value.bind="newTodoDescription"
       >
+    </div>
+
+    <div
+      jr-if="todos.length"
+      class="panel-tabs"
+
+      jr-style="
+        ${filteredTodos.length ? 'margin-bottom: -1px;' : ''}
+        padding-top: 3px;
+        font-size: 12px;
+      "
+    >
+      <a
+        jr-class="allFilterBtn ${
+          filter === 'all' ? 'is-active' : ''
+        }"
+
+        jr-textcontent="All (${todos.length})"
+      ></a>
+
+      <a
+        jr-class="activeFilterBtn ${
+          filter === 'active' ? 'is-active' : ''
+        }"
+
+        jr-textcontent="Active (${activeTodos.length})"
+      ></a>
+
+      <a
+        jr-class="completedFilterBtn ${
+          filter === 'completed' ? 'is-active' : ''
+        }"
+
+        jr-textcontent="Completed (${completedTodos.length})"
+      ></a>
     </div>
 
     <div class="todoList" jr-list="for todo of filteredTodos">
@@ -85,38 +120,24 @@
       </a>
     </div>
 
-    <div class="panel-block" style="flex-flow: column">
-      <div class="field has-addons">
-        <span class="control">
-          <button
-            jr-class="allFilterBtn button is-small ${
-              filter === 'all' ? 'is-info' : ''
-            }"
+    <div
+      jr-if="todos.length"
+      class="panel-block"
+      style="justify-content: center"
+    >
+      <button
+        jr-if="todos.length >= 2"
+        class="shuffleBtn button is-small is-info"
+      >
+        Shuffle
+      </button>
 
-            jr-textcontent="All (${todos.length})"
-          ></button>
-        </span>
-
-        <span class="control">
-          <button
-            jr-class="activeFilterBtn button is-small ${
-              filter === 'active' ? 'is-info' : ''
-            }"
-
-            jr-textcontent="Active (${activeTodos.length})"
-          ></button>
-        </span>
-
-        <span class="control">
-          <button
-            jr-class="completedFilterBtn button is-small ${
-              filter === 'completed' ? 'is-info' : ''
-            }"
-
-            jr-textcontent="Completed (${completedTodos.length})"
-          ></button>
-        </span>
-      </div>
+      <button
+        class="clearBtn button is-small is-danger"
+        style="margin-left: 5px"
+      >
+        Clear
+      </button>
     </div>
   </div>
 </div>
@@ -208,6 +229,16 @@
         rootScope.filter === 'completed'
         ? 'all' : 'completed';
 
+      return;
+    }
+
+    if (ev.target.classList.contains('shuffleBtn')) {
+      jr.arrayShuffle(rootScope.todos);
+      return;
+    }
+
+    if (ev.target.classList.contains('clearBtn')) {
+      rootScope.todos = [];
       return;
     }
 
