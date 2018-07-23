@@ -14,3 +14,14 @@ let escapeRe = /([.*+?^=!:${}()|\[\]\/\\])/g;
 exports.escapeRegExp =
   str => str.replace(escapeRe, '\\$1');
 
+exports.elAttrsToString = el => {
+  let tagName = el.tagName.toLowerCase();
+  let attrs = [];
+
+  for (let i = 0; i < el.attributes.length; ++i) {
+    let attr = el.attributes[i];
+    attrs.push(`${attr.name}="${attr.value}"`);
+  }
+
+  return `<${tagName} ${attrs.join(' ')}>`;
+};

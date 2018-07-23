@@ -18,6 +18,17 @@ let escapeRe = /([.*+?^=!:${}()|\[\]\/\\])/g;
 exports.escapeRegExp =
   str => str.replace(escapeRe, '\\$1');
 
+exports.elAttrsToString = el => {
+  let tagName = el.tagName.toLowerCase();
+  let attrs = [];
+
+  for (let i = 0; i < el.attributes.length; ++i) {
+    let attr = el.attributes[i];
+    attrs.push(`${attr.name}="${attr.value}"`);
+  }
+
+  return `<${tagName} ${attrs.join(' ')}>`;
+};
 
 },{}],3:[function(require,module,exports){
 let MutationSummary = require('mutation-summary');
@@ -329,36 +340,92 @@ jr.getScope = el => {
     return ref && ref.value;
   };
 
-  scope.eval = expr => {
-    let locals = Object.keys(scope.hash).join(', ');
+  let jsIdRe = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 
-    return new Function('$jrScopeHash', `
-      let { ${locals} } = $jrScopeHash;
-      return (${expr});
-    `)(scope.hash);
+  scope.eval = expr => {
+    try {
+      let locals = Object.keys(scope.hash)
+        .filter(x => jsIdRe.test(x))
+        .join(', ');
+
+      return new Function('$jrScopeHash', `
+        const { ${locals} } = $jrScopeHash;
+        return (${expr});
+      `)(scope.hash);
+    }
+    catch (err) {
+      if (err instanceof ReferenceError) {
+        return null;
+      }
+
+      err.message = `${err.message} in ${expr}`;
+      throw err;
+    }
   };
 
-  scope.set = (k, v) => {
-    let ref = scope.refs[k];
+  scope.set = (expr, v) => {
+    try {
+      let locals = Object.keys(scope.hash)
+        .filter(x => jsIdRe.test(x))
+        .join(', ');
 
-    if (ref) {
-      return scope.refs[k].obj[k] = v;
+      let dotOperands = expr.split('.');
+
+      let firstKey = dotOperands[0];
+      let firstKeyRef = scope.refs[firstKey];
+
+      if (!firstKeyRef) {
+        throw new ReferenceError(
+          `${firstKey} is undefined`,
+        );
+      }
+
+      let restOfExpr = dotOperands.slice(1).join('.');
+
+      if (restOfExpr) {
+        restOfExpr = `.${restOfExpr}`;
+      }
+
+      let ctx;
+      let genExpr = '$jrScopeCtx';
+
+      switch (firstKeyRef.type) {
+        case 'scope':
+          ctx = firstKeyRef.obj;
+          genExpr += `.${firstKey}${restOfExpr}`;
+
+          break;
+
+        case 'iterator':
+          if (!restOfExpr) {
+            throw new TypeError(
+              `Assignment to constant variable (an ` +
+              `iterator)`,
+            );
+          }
+
+          ctx = firstKeyRef.value;
+          genExpr += restOfExpr;
+
+          break;
+
+        default:
+          throw new Error('???');
+      }
+
+      genExpr += ` = $jrScopeSetVal`;
+
+      return new Function(
+        '$jrScopeHash', '$jrScopeCtx', '$jrScopeSetVal', `
+          const { ${locals} } = $jrScopeHash;
+          return (${genExpr});
+        `,
+      )(scope.hash, ctx, v);
     }
-
-    let el = scope.els[0];
-    let elScope = el.jr.scope;
-
-    elScope[k] = v;
-
-    scope.refs[k] = {
-      type: 'scope',
-      el,
-      obj: elScope,
-      key: k,
-      value: v,
-    };
-
-    return v;
+    catch (err) {
+      let ErrorType = err.constructor;
+      throw new ErrorType(`${err.message} in ${expr}`);
+    }
   };
 
   return scope;
@@ -366,21 +433,34 @@ jr.getScope = el => {
 
 jr.onChange = ev => {
   let el = ev.target;
-  let indexEntry = jr.index.get(el);
 
-  if (!indexEntry) {
-    return;
+  try {
+    let indexEntry = jr.index.get(el);
+
+    if (!indexEntry) {
+      return;
+    }
+
+    let attr = indexEntry.attrs['jr-value.bind'];
+    let scope = jr.getScope(el);
+
+    scope.set(attr.value, el.value);
+  }
+  catch (err) {
+    err.message =
+      `${err.message} while handling change` +
+      ` event for ${jr.elAttrsToString(el)}`;
+
+    throw err;
   }
 
-  let attr = indexEntry.attrs['jr-value.bind'];
-  let scope = jr.getScope(el);
-
-  scope.set(attr.value, el.value);
   jr.update();
 };
 
 jr.updateIfEl = el => {
-  let scope = jr.getScope(el);
+  el = jr(el);
+
+  let scope = el.jr.getScope(el);
 
   let indexEntry = jr.index.get(el);
   let ifAttr = indexEntry.attrs['jr-if'];
@@ -588,83 +668,102 @@ jr.initListEl = ({ el, listAttr, list, iteratorName }) => {
         continue;
       }
 
-      jr.initEl(el);
+      try {
+        jr.initEl(el);
+      }
+      catch (err) {
+        console.error(err);
+      }
     }
   }
 };
 
 jr.updateEl = el => {
-  let scope = jr.getScope(el);
-  let indexEntry = jr.index.get(el);
+  try {
+    let scope = jr.getScope(el);
+    let indexEntry = jr.index.get(el);
 
-  for (let attr of Object.values(indexEntry.attrs)) {
-    if (attr.name === 'jr-if') {
-      jr.updateIfEl(el);
-      continue;
-    }
-
-    if (attr.name === 'jr-list') {
-      jr.updateListEl(el);
-      continue;
-    }
-
-    let computed = attr.value = el.getAttribute(attr.name);
-
-    let interpRe = /\${([^}]+)}/g;
-    let interpList = [];
-
-    while (true) {
-      let reRes = interpRe.exec(computed);
-
-      if (!reRes) {
-        break;
+    for (let attr of Object.values(indexEntry.attrs)) {
+      if (attr.name === 'jr-if') {
+        jr.updateIfEl(el);
+        continue;
       }
 
-      interpList.push(reRes[1]);
-    }
+      if (attr.name === 'jr-list') {
+        jr.updateListEl(el);
+        continue;
+      }
 
-    for (let expr of interpList) {
-      let value = scope.eval(expr);
+      let computed = attr.value =
+        el.getAttribute(attr.name);
 
-      computed = computed.replace(
-        new RegExp(jr.escapeRegExp(`\${${expr}}`), 'g'),
-        value,
-      );
-    }
+      let interpRe = /\${([^}]+)}/g;
+      let interpList = [];
 
-    if (attr.name.endsWith('.bind')) {
-      computed = scope.eval(computed);
-    }
+      while (true) {
+        let reRes = interpRe.exec(computed);
 
-    if (computed === attr.computed) {
-      continue;
-    }
+        if (!reRes) {
+          break;
+        }
 
-    attr.computed = computed;
+        interpList.push(reRes[1]);
+      }
 
-    let targetName = attr.name
-      .slice('jr-'.length)
-      .replace(/\.bind$/, '');
+      for (let expr of interpList) {
+        let value = scope.eval(expr);
 
-    if (targetName === 'textcontent') {
-      el.textContent = computed;
-    }
-    else {
-      let propTargets = ['value'];
+        computed = computed.replace(
+          new RegExp(jr.escapeRegExp(`\${${expr}}`), 'g'),
+          value,
+        );
+      }
 
-      if (!propTargets.includes(targetName)) {
-        el.setAttribute(targetName, computed);
+      if (attr.name.endsWith('.bind')) {
+        computed = scope.eval(computed);
+      }
+
+      if (computed === attr.computed) {
+        continue;
+      }
+
+      attr.computed = computed;
+
+      let targetName = attr.name
+        .slice('jr-'.length)
+        .replace(/\.bind$/, '');
+
+      if (targetName === 'textcontent') {
+        el.textContent = computed;
       }
       else {
-        el[targetName] = computed;
+        let propTargets = ['value'];
+
+        if (!propTargets.includes(targetName)) {
+          el.setAttribute(targetName, computed);
+        }
+        else {
+          el[targetName] = computed;
+        }
       }
     }
+  }
+  catch (err) {
+    err.message =
+      `${err.message} while updating ${jr.elAttrsToString(el)}`;
+
+    throw err;
   }
 };
 
 jr.update = () => {
   for (let el of jr.index.keys()) {
-    jr.updateEl(el);
+    try {
+      jr.updateEl(el);
+    }
+    catch (err) {
+      console.error(err);
+    }
   }
 };
 

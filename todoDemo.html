@@ -24,7 +24,7 @@
   }
 
   .todoToggleBtn {
-    width: 65px;
+    min-width: 65px;
     margin-right: 10px;
   }
 
@@ -46,7 +46,7 @@
     </div>
 
     <div jr-list="for todo of todos">
-      <a jr-class="panel-block ${
+      <a jr-class="todoBlock panel-block ${
         !todo.done ? 'is-active' : ''
       }">
         <button
@@ -54,7 +54,14 @@
           jr-textcontent.bind="!todo.done ? 'Done' : 'Undo'"
         ></button>
 
+        <input
+          jr-if="todo.editing"
+          class="editTodoInput input is-small"
+          jr-value.bind="todo.description"
+        >
+
         <span
+          jr-if="!todo.editing"
           jr-class="${todo.done ? 'done' : ''}"
           jr-textcontent.bind="todo.description"
         ></span>
@@ -100,12 +107,53 @@
   });
 
   root.addEventListener('click', ev => {
-    if (!ev.target.classList.contains('todoToggleBtn')) {
+    if (ev.target.classList.contains('todoToggleBtn')) {
+      let { todo } = jr(ev.target).jr.getScope().hash;
+      todo.done = !todo.done;
+
       return;
     }
 
-    let { todo } = jr(ev.target).jr.getScope().hash;
-    todo.done = !todo.done;
+    let { parentElements } = jr(ev.target).jr;
+
+    for (let el of [ev.target, ...parentElements]) {
+      if (el.classList.contains('todoBlock')) {
+        let { todo } = jr(ev.target).jr.getScope().hash;
+        todo.editing = true;
+
+        let doneEditing = () => {
+          todo.editing = false;
+          jr.update();
+        };
+
+        requestAnimationFrame(() => {
+          let input = jr.findFirst('.editTodoInput');
+
+          input.addEventListener('blur', doneEditing);
+
+          input.addEventListener('keydown', ev => {
+            if (ev.key === 'Enter') {
+              doneEditing();
+            }
+          });
+
+          input.focus();
+        });
+
+        return;
+      }
+    }
+  });
+
+  root.addEventListener('blur', ev => {
+    if (ev.target.classList.contains('editTodoInput')) {
+      let { todo } = jr(ev.target).jr.getScope().hash;
+
+      todo.editing = false;
+      jr.update();
+
+      return;
+    }
   });
 
   jr.init();
