@@ -73,7 +73,7 @@
 <script>
   let root = jr.findFirst('.todos');
 
-  root.jr.setScope({
+  window.rootScope = root.jr.setScope({
     newTodoDescription: '',
 
     todos: [
