@@ -2,10 +2,11 @@
 
 **Disclaimer:** This software is pre-alpha. It was implemented in a rush over weekends and necessary enhancements abound, but it works and is not as full of bullshit as Angular, React, Vue, etc.
 
-Junior is like someone with a weird "dom" fetish, [Mithril](https://mithril.js.org), and [jQuery](https://jquery.org) had a very ugly threesome-born baby.
+Junior is like [Mithril](https://mithril.js.org), [jQuery](https://jquery.org), and someone with a weird "dom" fetish had a very ugly threesome-born baby.
 
-* Good ol' to-do list demo app is at [n2liquid.github.io/junior-ui/todoDemo.html](https://n2liquid.github.io/junior-ui/todoDemo.html).
-* Test page is at [n2liquid.github.io/junior-ui/test.html](https://n2liquid.github.io/junior-ui/test.html).
+Check out the to-do list demo app:
+
+[![To-Do List Demo](https://i.imgur.com/gQqna3U.gif)](https://n2liquid.github.io/junior-ui/todoDemo.html)
 
 ## Installation
 
@@ -56,7 +57,7 @@ Scope changes are not automatically observed and require `jr.update()` to be cal
 
 `jr.update()` is automatically called whenever:
 
-* `keydown` and `keyup` events are fired on Junior input elements.
+* `blur`, `keydown`, and `keyup` events are fired on input elements having Junior attributes.
 * `click` and `change` events are fired anywhere in the DOM.
 
 ## License
