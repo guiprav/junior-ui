@@ -299,7 +299,13 @@ jr.getScope = el => {
   scope.hash = {};
 
   for (let [k, ref] of Object.entries(scope.refs)) {
-    scope.hash[k] = ref.value;
+    let { value } = ref;
+
+    if (typeof ref.value === 'function') {
+      value = value.bind(ref.obj);
+    }
+
+    scope.hash[k] = value;
   }
 
   scope.get = k => {
@@ -309,14 +315,15 @@ jr.getScope = el => {
 
   let jsIdRe = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 
+  scope.getLocals = () => Object.keys(scope.hash)
+    .filter(x => jsIdRe.test(x));
+
   scope.eval = expr => {
     try {
-      let locals = Object.keys(scope.hash)
-        .filter(x => jsIdRe.test(x))
-        .join(', ');
+      let localsCode = scope.getLocals().join(', ');
 
       return new Function('$jrScopeHash', `
-        const { ${locals} } = $jrScopeHash;
+        const { ${localsCode} } = $jrScopeHash;
         return (${expr});
       `)(scope.hash);
     }
@@ -332,10 +339,6 @@ jr.getScope = el => {
 
   scope.set = (expr, v) => {
     try {
-      let locals = Object.keys(scope.hash)
-        .filter(x => jsIdRe.test(x))
-        .join(', ');
-
       let dotOperands = expr.split('.');
 
       let firstKey = dotOperands[0];
@@ -382,9 +385,11 @@ jr.getScope = el => {
 
       genExpr += ` = $jrScopeSetVal`;
 
+      let localsCode = scope.getLocals().join(', ');
+
       return new Function(
         '$jrScopeHash', '$jrScopeCtx', '$jrScopeSetVal', `
-          const { ${locals} } = $jrScopeHash;
+          const { ${localsCode} } = $jrScopeHash;
           return (${genExpr});
         `,
       )(scope.hash, ctx, v);
@@ -645,6 +650,42 @@ jr.initListEl = ({ el, listAttr, list, iteratorName }) => {
   }
 };
 
+jr.updateEventAttr = (el, attrName) => {
+  let indexEntry = jr.index.get(el);
+  let attr = indexEntry.attrs[attrName];
+
+  let evName = attrName.slice('jr-on-'.length);
+
+  if (attr.handler) {
+    el.removeEventListener(evName, attr.handler);
+  }
+
+  let scope = jr.getScope(el);
+  let localsCode = scope.getLocals().join(', ');
+  let handlerCode = attr.value = el.getAttribute(attrName);
+
+  // FIXME: This is awfully broken, but will do for now.
+  if (handlerCode.trim().includes('=')) {
+    let [lhs, rhs] = handlerCode.split('=').map(x => x.trim());
+
+    handlerCode =
+      `$jrScope.set(${JSON.stringify(lhs)}, ${rhs})`;
+  }
+
+  attr.handler = new Function(
+    '$jr', '$jrScope', '$jrEv', `
+      const { ${localsCode} } = $jrScope.hash;
+      const jr = Object.create($jr);
+
+      jr.ev = $jrEv;
+
+      ${handlerCode};
+    `,
+  ).bind(null, jr, scope);
+
+  el.addEventListener(evName, attr.handler);
+};
+
 jr.updateEl = el => {
   try {
     let scope = jr.getScope(el);
@@ -659,6 +700,10 @@ jr.updateEl = el => {
       if (attr.name === 'jr-list') {
         jr.updateListEl(el);
         continue;
+      }
+
+      if (attr.name.startsWith('jr-on-')) {
+        jr.updateEventAttr(el, attr.name);
       }
 
       let computed = attr.value =
