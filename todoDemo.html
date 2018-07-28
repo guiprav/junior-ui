@@ -56,6 +56,7 @@
         class="newTodoInput input"
         placeholder="What needs to be done?"
         jr-value.bind="newTodoDescription"
+        jr-on-keypress="onNewTodoInputKeypress(jr.ev)"
       >
     </div>
 
@@ -74,6 +75,7 @@
           filter === 'all' ? 'is-active' : ''
         }"
 
+        jr-on-click="filter = 'all'"
         jr-textcontent="All (${todos.length})"
       ></a>
 
@@ -82,6 +84,7 @@
           filter === 'active' ? 'is-active' : ''
         }"
 
+        jr-on-click="filter = 'active'"
         jr-textcontent="Active (${activeTodos.length})"
       ></a>
 
@@ -90,19 +93,25 @@
           filter === 'completed' ? 'is-active' : ''
         }"
 
+        jr-on-click="filter = 'completed'"
         jr-textcontent="Completed (${completedTodos.length})"
       ></a>
     </div>
 
     <div class="todoList" jr-list="for todo of filteredTodos">
-      <a jr-class="todoBlock panel-block ${
-        todo.done ? 'is-active' : ''
-      }">
+      <a
+        jr-class="todoBlock panel-block ${
+          todo.done ? 'is-active' : ''
+        }"
+
+        jr-on-click="onTodoBlockClick(jr.ev, todo)"
+      >
         <button
           jr-class="todoToggleBtn button ${
             !todo.done ? 'is-success' : 'is-danger'
           }"
 
+          jr-on-click="todo.done = !todo.done"
           jr-textcontent.bind="!todo.done ? 'Done' : 'Undo'"
         ></button>
 
@@ -110,11 +119,17 @@
           jr-if="todo.editing"
           class="editTodoInput input"
           jr-value.bind="todo.description"
+          jr-on-blur="onDoneEditing(todo)"
+          jr-on-keypress="onEditTodoInputKeypress(jr.ev, todo)"
         >
 
         <span
           jr-if="!todo.editing"
-          jr-class="${todo.done ? 'done' : ''}"
+
+          jr-class="todoDescription ${
+            todo.done ? 'done' : ''
+          }"
+
           jr-textcontent.bind="todo.description"
         ></span>
       </a>
@@ -127,14 +142,16 @@
     >
       <button
         jr-if="todos.length >= 2"
-        class="shuffleBtn button is-small is-info"
+        class="button is-small is-info"
+        jr-on-click="jr.arrayShuffle(todos)"
       >
         Shuffle
       </button>
 
       <button
-        class="clearBtn button is-small is-danger"
+        class="button is-small is-danger"
         style="margin-left: 5px"
+        jr-on-click="todos = []"
       >
         Clear
       </button>
@@ -147,6 +164,22 @@
 
   window.rootScope = root.jr.setScope({
     newTodoDescription: '',
+
+    onNewTodoInputKeypress(ev) {
+      if (ev.key !== 'Enter') {
+        return;
+      }
+
+      this.todos.push({
+        description: this.newTodoDescription,
+        done: false,
+      });
+
+      this.newTodoDescription = '';
+      jr.update();
+
+      jr.findFirst('.todoList').scrollTop = 999999999;
+    },
 
     todos: [
       { description: `Keep everything refreshingly simple`, done: true },
@@ -179,120 +212,38 @@
           return this.completedTodos;
       }
     },
-  });
 
-  root.addEventListener('keydown', ev => {
-    if (!ev.target.classList.contains('newTodoInput')) {
-      return;
-    }
-
-    if (ev.key !== 'Enter') {
-      return;
-    }
-
-    let scope = jr(ev.target).jr.getScope();
-
-    scope.hash.todos.push({
-      description: scope.hash.newTodoDescription,
-      done: false,
-    });
-
-    scope.set('newTodoDescription', '');
-    jr.update();
-
-    jr.findFirst('.todoList').scrollTop = 999999999;
-  });
-
-  root.addEventListener('click', ev => {
-    if (ev.target.classList.contains('todoToggleBtn')) {
-      let { todo } = jr(ev.target).jr.getScope().hash;
-      todo.done = !todo.done;
-
-      return;
-    }
-
-    if (ev.target.classList.contains('allFilterBtn')) {
-      rootScope.filter = 'all';
-      return;
-    }
-
-    if (ev.target.classList.contains('activeFilterBtn')) {
-      rootScope.filter =
-        rootScope.filter === 'active'
-        ? 'all' : 'active';
-
-      return;
-    }
-
-    if (ev.target.classList.contains('completedFilterBtn')) {
-      rootScope.filter =
-        rootScope.filter === 'completed'
-        ? 'all' : 'completed';
-
-      return;
-    }
-
-    if (ev.target.classList.contains('shuffleBtn')) {
-      jr.arrayShuffle(rootScope.todos);
-      return;
-    }
-
-    if (ev.target.classList.contains('clearBtn')) {
-      rootScope.todos = [];
-      return;
-    }
-
-    let { parentElements } = jr(ev.target).jr;
-
-    for (let el of [ev.target, ...parentElements]) {
-      if (el.classList.contains('todoBlock')) {
-        let { todos, todo } =
-          jr(ev.target).jr.getScope().hash;
-
-        todo.editing = true;
-
-        let doneEditing = () => {
-          if (!todo.editing) {
-            return;
-          }
-
-          todo.editing = false;
-
-          if (!todo.description) {
-            todos.splice(todos.indexOf(todo), 1);
-          }
-
-          jr.update();
-        };
-
-        requestAnimationFrame(() => {
-          let input = jr.findFirst('.editTodoInput');
-
-          input.addEventListener('blur', doneEditing);
-
-          input.addEventListener('keydown', ev => {
-            if (ev.key === 'Enter') {
-              doneEditing();
-            }
-          });
-
-          input.select();
-        });
-
+    onTodoBlockClick(ev, todo) {
+      if (!['todoBlock', 'todoDescription'].some(
+        x => ev.target.classList.contains(x),
+      )) {
         return;
       }
-    }
-  });
 
-  root.addEventListener('blur', ev => {
-    if (ev.target.classList.contains('editTodoInput')) {
-      let { todo } = jr(ev.target).jr.getScope().hash;
+      todo.editing = true;
 
+      requestAnimationFrame(() => {
+        jr.findFirst('.editTodoInput').select();
+      });
+    },
+
+    onDoneEditing(todo) {
       todo.editing = false;
-      jr.update();
 
-      return;
-    }
+      if (todo.description) {
+        return;
+      }
+
+      this.todos.splice(this.todos.indexOf(todo), 1);
+    },
+
+    onEditTodoInputKeypress(ev, todo) {
+      if (ev.key !== 'Enter' || !todo.editing) {
+        return;
+      }
+
+      this.onDoneEditing(todo);
+    },
   });
 
   jr.init();
