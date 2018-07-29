@@ -447,6 +447,11 @@ jr.onChange = ev => {
     }
 
     let attr = indexEntry.attrs['jr-value.bind'];
+
+    if (!attr) {
+      return;
+    }
+
     let scope = jr.getScope(el);
 
     scope.set(attr.value, el.value);
