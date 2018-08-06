@@ -501,12 +501,12 @@ jr.updateListEl = el => {
   }
 
   let iteratorName = parsedListExpr[1];
-  let iterableKey = parsedListExpr[2];
+  let iterableExpr = parsedListExpr[2];
 
   let oldList = listAttr.computed;
 
   let list = listAttr.computed =
-    Array.from(scope.get(iterableKey));
+    Array.from(scope.eval(iterableExpr));
 
   if (!oldList) {
     jr.initListEl({ el, listAttr, list, iteratorName });
