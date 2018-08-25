@@ -2,6 +2,8 @@
 window.jr = require('.');
 
 },{".":3}],2:[function(require,module,exports){
+let jr = require('.');
+
 exports.arrayShuffle = a => {
   for (let i = a.length - 1; i > 0; i--) {
     let j = Math.floor(Math.random() * (i + 1));
@@ -30,7 +32,28 @@ exports.elAttrsToString = el => {
   return `<${tagName} ${attrs.join(' ')}>`;
 };
 
-},{}],3:[function(require,module,exports){
+exports.createElement = (html, scope) => {
+  let container = document.createElement('div');
+
+  container.innerHTML = html;
+
+  if (container.children.length !== 1) {
+    throw new Error(
+      `createElement: html must have a single ` +
+      `root element`,
+    );
+  }
+
+  let el = jr(container.children[0]);
+
+  if (scope) {
+    el.jr.setScope(scope);
+  }
+
+  return el;
+};
+
+},{".":3}],3:[function(require,module,exports){
 let MutationSummary = require('mutation-summary');
 
 let jr = module.exports = exports = target => {
