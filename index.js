@@ -215,6 +215,8 @@ jr.init = () => {
 };
 
 jr.initEl = el => {
+  el = jr(el);
+
   if (jr.index.has(el) || el.nodeName === '#comment') {
     return;
   }
