@@ -47,9 +47,9 @@
   <div class="panel box" jr-style="
     padding: 10px;
 
-    background-color: ${
+    background-color: {{
       activeTodos.length ? 'antiquewhite' : 'aliceblue'
-    };
+    }};
   ">
     <div class="panel-block">
       <input
@@ -65,51 +65,51 @@
       class="panel-tabs"
 
       jr-style="
-        ${filteredTodos.length ? 'margin-bottom: -1px;' : ''}
+        {{filteredTodos.length ? 'margin-bottom: -1px;' : ''}}
         padding-top: 3px;
         font-size: 12px;
       "
     >
       <a
-        jr-class="allFilterBtn ${
+        jr-class="allFilterBtn {{
           filter === 'all' ? 'is-active' : ''
-        }"
+        }}"
 
         jr-on-click="filter = 'all'"
-        jr-textcontent="All (${todos.length})"
+        jr-textcontent="All ({{todos.length}})"
       ></a>
 
       <a
-        jr-class="activeFilterBtn ${
+        jr-class="activeFilterBtn {{
           filter === 'active' ? 'is-active' : ''
-        }"
+        }}"
 
         jr-on-click="filter = 'active'"
-        jr-textcontent="Active (${activeTodos.length})"
+        jr-textcontent="Active ({{activeTodos.length}})"
       ></a>
 
       <a
-        jr-class="completedFilterBtn ${
+        jr-class="completedFilterBtn {{
           filter === 'completed' ? 'is-active' : ''
-        }"
+        }}"
 
         jr-on-click="filter = 'completed'"
-        jr-textcontent="Completed (${completedTodos.length})"
+        jr-textcontent="Completed ({{completedTodos.length}})"
       ></a>
     </div>
 
     <div class="todoList" jr-list="for todo of filteredTodos">
       <a
-        jr-class="todoBlock panel-block ${
+        jr-class="todoBlock panel-block {{
           todo.done ? 'is-active' : ''
-        }"
+        }}"
 
         jr-on-click="onTodoBlockClick(jr.ev, todo)"
       >
         <button
-          jr-class="todoToggleBtn button ${
+          jr-class="todoToggleBtn button {{
             !todo.done ? 'is-success' : 'is-danger'
-          }"
+          }}"
 
           jr-on-click="todo.done = !todo.done"
           jr-textcontent.bind="!todo.done ? 'Done' : 'Undo'"
@@ -126,9 +126,9 @@
         <span
           jr-if="!todo.editing"
 
-          jr-class="todoDescription ${
+          jr-class="todoDescription {{
             todo.done ? 'done' : ''
-          }"
+          }}"
 
           jr-textcontent.bind="todo.description"
         ></span>

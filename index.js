@@ -716,7 +716,7 @@ jr.updateEl = el => {
       let computed = attr.value =
         el.getAttribute(attr.name);
 
-      let interpRe = /\${([^}]+)}/g;
+      let interpRe = /{{([^}]+)}}/g;
       let interpList = [];
 
       while (true) {
@@ -733,7 +733,7 @@ jr.updateEl = el => {
         let value = scope.eval(expr);
 
         computed = computed.replace(
-          new RegExp(jr.escapeRegExp(`\${${expr}}`), 'g'),
+          new RegExp(jr.escapeRegExp(`{{${expr}}}`), 'g'),
           value,
         );
       }
