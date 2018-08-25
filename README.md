@@ -22,9 +22,15 @@ Set scopes directly to DOM nodes and use them with straightforward attribute exp
 <ul class="fruitList" jr-list="for fruit of fruits">
   <li>
     The
-    <a jr-href="${wikipediaPrefix}/${fruit.name}"></a>
+    <a
+      jr-href="{{wikipediaPrefix}}/{{fruit.name}}"
+      jr-textcontent.bind="fruit.name"
+    ></a>
     is
-    <a jr-href="${wikipediaPrefix}/${fruit.color}"></a>.
+    <a
+      jr-href="{{wikipediaPrefix}}/{{fruit.color}}"
+      jr-textcontent.bind="fruit.color"
+    ></a>.
   </li>
 </div>
 
@@ -57,8 +63,71 @@ Scope changes are not automatically observed and require `jr.update()` to be cal
 
 `jr.update()` is automatically called whenever:
 
-* `blur`, `keydown`, and `keyup` events are fired on input elements having Junior attributes.
-* `click` and `change` events are fired anywhere in the DOM.
+* `keydown` and `keyup` events are fired on input elements having Junior attributes.
+* `change` events are fired on or bubble up to any element having Junior attributes.
+* `click` events are fired anywhere in the DOM and bubble up to `document`.
+
+## Other features
+
+**Event attributes:**
+
+Use `jr-on-*` (e.g.: `jr-on-click`) attributes to attach DOM event handlers:
+
+```html
+<input jr-value.bind="userText">
+
+<button jr-on-click="
+  console.log('Event:', jr.ev);
+  console.log('Event target:', jr.ev.target);
+
+  alert(`You've typed: ${userText}`);
+">
+  Click me
+</button>
+
+<script>
+  jr.findFirst('body').jr.setScope({
+    userText: `Type something...`,
+  });
+
+  jr.init();
+</script>
+```
+
+Since Junior event attributes contain vanilla JavaScript code, Junior's `{{expr}}` expression interpolations are not available. Use regular JavaScript template literals (like `${userText}` above) or string concatenation instead.
+
+Event attributes will capture bubbling events. There's no built-in support for event delegation, but you can do it manually by checking event targets using `jr.ev.target` (see `console.log` above).
+
+**Dynamically creating elements:**
+
+Use `jr.createElement` to create elements from JavaScript strings:
+
+```js
+let el = jr.createElement(`
+  <div class="cute">
+    Hello, world!
+  </div>
+`);
+
+jr.findFirst('body').appendChild(el);
+```
+
+An optional shortcut scope-setting parameter can also be used:
+
+```js
+jr.findFirst('body').appendChild(jr.createElement(`
+  <span jr-textcontent="Hello, {{name}}!"></span>
+`, { name: 'world' }));
+
+// is equivalent to:
+
+let el = jr.createElement(`
+  <span jr-textcontent="Hello, {{name}}!"></span>
+`);
+
+el.jr.setScope({ name: 'world' });
+jr.findFirst('body').appendChild(el);
+```
 
 ## License
 
