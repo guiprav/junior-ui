@@ -495,7 +495,7 @@ jr.updateListEl = el => {
     listAttr.value = el.getAttribute('jr-list');
 
   let parsedListExpr =
-    /^[ \t\r\n]*for ([^ ]+) of (.+)[ \t\r\n]*$/
+    /^[ \t\r\n]*for ([^ \t\r\n]+) of ([^ \t\r\n]+)[ \t\r\n]*$/
     .exec(listExpr);
 
   if (!parsedListExpr) {
