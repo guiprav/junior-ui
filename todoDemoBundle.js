@@ -559,8 +559,10 @@ jr.updateIfEl = el => {
     indexEntry.commentAnchor = null;
   }
   else {
+    let tagName = el.tagName.toLowerCase();
+
     let anchor = document.createComment(
-      ` jr anchor for ${el.tagName.toLowerCase()} `,
+      ` jr anchor for ${tagName}[jr-if="${condExpr}"] `,
     );
 
     anchor.jr = {
