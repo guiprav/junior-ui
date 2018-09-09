@@ -197,7 +197,12 @@ jr.init = () => {
             let el = jr(n);
 
             for (let el2 of [el, ...el.jr.parentElements]) {
-              if (el2.jr.commentAnchor) {
+              let { commentAnchor } = el2.jr;
+
+              if (
+                commentAnchor
+                && document.contains(commentAnchor)
+              ) {
                 continue removedNodesLoop;
               }
             }
