@@ -740,6 +740,10 @@ jr.updateEl = el => {
         continue;
       }
 
+      if (!document.contains(el)) {
+        continue;
+      }
+
       if (attr.name === 'jr-list') {
         jr.updateListEl(el);
         continue;
