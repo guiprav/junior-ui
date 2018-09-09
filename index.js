@@ -1,5 +1,3 @@
-let MutationSummary = require('mutation-summary');
-
 let jr = module.exports = exports = target => {
   if (typeof target === 'string') {
     return jr.find(target);
@@ -143,72 +141,102 @@ jr.init = () => {
     jr.initEl(el);
   }
 
-  jr.observer = new MutationSummary({
-    queries: [{ all: true }],
+  jr.observer = new MutationObserver(muts => {
+    let dirtyAttrs = new Map();
 
-    callback: summaries => {
-      let summary = summaries[0];
-
-      for (let el of summary.added) {
-        if (el.nodeName === '#text') {
-          continue;
-        }
-
-        jr.initEl(el);
-      }
-
-      removedElsLoop:
-      for (let el of summary.removed) {
-        el = jr(el);
-
-        for (let el2 of [el, ...el.jr.parentElements]) {
-          if (el2.jr.commentAnchor) {
-            continue removedElsLoop;
-          }
-        }
-
-        let { originalNode } = el.jr;
-
-        if (
-          originalNode
-          && !document.contains(originalNode)
-        ) {
-          jr.index.delete(originalNode);
-          continue removedElsLoop;
-        }
-
-        jr.index.delete(el);
-      }
-
-      let dirtyEls = new Set();
-
-      for (let [attrName, els] of Object.entries(
-        summary.attributeChanged,
-      )) {
-        for (let el of els) {
+    for (let mut of muts) {
+      switch (mut.type) {
+        case 'attributes': {
           if (
-            !attrName.startsWith('jr-')
-            || summary.added.includes(el)
-            || summary.removed.includes(el)
+            !mut.attributeName.startsWith('jr-')
+            || !document.contains(mut.target)
           ) {
             continue;
           }
 
-          let indexEntry = jr.index.get(el);
-          let attrVal = el.getAttribute(attrName);
-
-          if (indexEntry.attrs[attrName].value === attrVal) {
-            continue;
+          if (!dirtyAttrs.has(mut.target)) {
+            dirtyAttrs.set(mut.target, []);
           }
 
-          dirtyEls.add(el);
+          dirtyAttrs.get(mut.target).push(mut.attributeName);
+
+          break;
+        }
+
+        case 'childList': {
+          for (let n of mut.addedNodes) {
+            if (
+              n.nodeType !== Node.ELEMENT_NODE
+              || jr.index.has(n)
+            ) {
+              continue;
+            }
+
+            let el = jr(n);
+
+            jr.initEl(el);
+
+            for (let descEl of el.jr.find('*')) {
+              jr.initEl(descEl);
+            }
+          }
+
+          removedNodesLoop:
+          for (let n of mut.removedNodes) {
+            if (
+              n.nodeType !== Node.ELEMENT_NODE
+              && n.nodeType !== Node.COMMENT_NODE
+            ) {
+              continue;
+            }
+
+            if (document.contains(n)) {
+              continue;
+            }
+
+            let el = jr(n);
+
+            for (let el2 of [el, ...el.jr.parentElements]) {
+              if (el2.jr.commentAnchor) {
+                continue removedNodesLoop;
+              }
+            }
+
+            let { originalNode } = el.jr;
+
+            if (
+              originalNode
+              && !document.contains(originalNode)
+            ) {
+              el = originalNode;
+            }
+
+            jr.index.delete(el);
+          }
+
+          break;
         }
       }
+    }
 
-      for (let el of dirtyEls) {
-        jr.updateEl(el);
+    for (let [el, attrs] of dirtyAttrs.entries()) {
+      let indexEntry = jr.index.get(el);
+      let indexAttrs = indexEntry.attrs;
+
+      if (attrs.every(
+        x => indexAttrs[x].value === el.getAttribute(x),
+      )) {
+        continue;
       }
-    },
+
+      jr.updateEl(el);
+    }
+  });
+
+  jr.observer.observe(document, {
+    attributes: true,
+    childList: true,
+    subtree: true,
   });
 
   document.addEventListener('click', () => jr.update());
