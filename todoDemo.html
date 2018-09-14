@@ -142,13 +142,12 @@
     </div>
 
     <div
-      jr-if="todos.length"
       class="panel-block"
       style="justify-content: center"
     >
       <button
-        jr-if="todos.length >= 2"
         class="button is-small is-info"
+        jr-disabled.toggle="todos.length < 2"
         jr-on-click="jr.arrayShuffle(todos)"
       >
         Shuffle
@@ -157,6 +156,7 @@
       <button
         class="button is-small is-danger"
         style="margin-left: 5px"
+        jr-disabled.toggle="!todos.length"
         jr-on-click="todos = []"
       >
         Clear

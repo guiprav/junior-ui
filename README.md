@@ -69,6 +69,16 @@ Scope changes are not automatically observed and require `jr.update()` to be cal
 
 ## Other features
 
+**Boolean attributes:**
+
+Boolean attributes like `checked` or `disabled` must be added or removed altogether in order to be toggled on and off. For controlling those attributes, there's `jr-*.toggle`. It works a lot like `jr-*.bind`, only instead of binding to an attribute's value, it binds to an attribute's presence or absence:
+
+```html
+<button jr-disabled.toggle="shouldDisableBtn">
+  Click me (if you can)
+</button>
+```
+
 **Event attributes:**
 
 Use `jr-on-*` (e.g.: `jr-on-click`) attributes to attach DOM event handlers:

@@ -835,7 +835,10 @@ jr.updateEl = el => {
         );
       }
 
-      if (attr.name.endsWith('.bind')) {
+      let isBind = attr.name.endsWith('.bind');
+      let isToggle = attr.name.endsWith('.toggle');
+
+      if (isBind || isToggle) {
         computed = scope.eval(computed);
       }
 
@@ -847,10 +850,25 @@ jr.updateEl = el => {
 
       let targetName = attr.name
         .slice('jr-'.length)
-        .replace(/\.bind$/, '');
+        .replace(/\.(bind|toggle)$/, '');
 
       if (targetName === 'text-content') {
+        if (isToggle) {
+          throw new Error(
+            `jr-text-content.toggle is not supported`,
+          );
+        }
+
         el.textContent = computed;
+      }
+      else
+      if (isToggle) {
+        if (computed) {
+          el.setAttribute(targetName, '');
+        }
+        else {
+          el.removeAttribute(targetName);
+        }
       }
       else {
         let propTargets = ['value'];
