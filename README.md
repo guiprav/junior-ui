@@ -24,12 +24,12 @@ Set scopes directly to DOM nodes and use them with straightforward attribute exp
     The
     <a
       jr-href="{{wikipediaPrefix}}/{{fruit.name}}"
-      jr-textcontent.bind="fruit.name"
+      jr-text-content.bind="fruit.name"
     ></a>
     is
     <a
       jr-href="{{wikipediaPrefix}}/{{fruit.color}}"
-      jr-textcontent.bind="fruit.color"
+      jr-text-content.bind="fruit.color"
     ></a>.
   </li>
 </div>
@@ -116,13 +116,13 @@ An optional shortcut scope-setting parameter can also be used:
 
 ```js
 jr.findFirst('body').appendChild(jr.createElement(`
-  <span jr-textcontent="Hello, {{name}}!"></span>
+  <span jr-text-content="Hello, {{name}}!"></span>
 `, { name: 'world' }));
 
 // is equivalent to:
 
 let el = jr.createElement(`
-  <span jr-textcontent="Hello, {{name}}!"></span>
+  <span jr-text-content="Hello, {{name}}!"></span>
 `);
 
 el.jr.setScope({ name: 'world' });

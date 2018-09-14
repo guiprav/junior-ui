@@ -793,7 +793,7 @@ jr.updateEl = el => {
         .slice('jr-'.length)
         .replace(/\.bind$/, '');
 
-      if (targetName === 'textcontent') {
+      if (targetName === 'text-content') {
         el.textContent = computed;
       }
       else {

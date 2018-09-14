@@ -8,7 +8,7 @@
   </p>
 
   <p jr-if="username">
-    Hello there, <span jr-textcontent.bind="username"></span>.
+    Hello there, <span jr-text-content.bind="username"></span>.
 
     <span jr-if="
       username.toLowerCase().includes('someone')
@@ -27,7 +27,7 @@
       <li>
         <a
           jr-href="https://www.wikipedia.org/wiki/${fruit}"
-          jr-textcontent.bind="fruit"
+          jr-text-content.bind="fruit"
         ></a>
       </li>
     </ul>
@@ -42,14 +42,14 @@
       <li>
         <a
           jr-href="https://www.wikipedia.org/wiki/${fruit.name}"
-          jr-textcontent.bind="fruit.name"
+          jr-text-content.bind="fruit.name"
         ></a>
 
         is
 
         <a
           jr-href="https://www.wikipedia.org/wiki/${fruit.color}"
-          jr-textcontent.bind="fruit.color"
+          jr-text-content.bind="fruit.color"
         ></a>.
       </li>
     </ul>

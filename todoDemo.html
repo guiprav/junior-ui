@@ -76,7 +76,7 @@
         }}"
 
         jr-on-click="filter = 'all'"
-        jr-textcontent="All ({{todos.length}})"
+        jr-text-content="All ({{todos.length}})"
       ></a>
 
       <a
@@ -85,7 +85,7 @@
         }}"
 
         jr-on-click="filter = 'active'"
-        jr-textcontent="Active ({{activeTodos.length}})"
+        jr-text-content="Active ({{activeTodos.length}})"
       ></a>
 
       <a
@@ -94,7 +94,10 @@
         }}"
 
         jr-on-click="filter = 'completed'"
-        jr-textcontent="Completed ({{completedTodos.length}})"
+
+        jr-text-content="
+          Completed ({{completedTodos.length}})
+        "
       ></a>
     </div>
 
@@ -112,7 +115,10 @@
           }}"
 
           jr-on-click="todo.done = !todo.done"
-          jr-textcontent.bind="!todo.done ? 'Done' : 'Undo'"
+
+          jr-text-content.bind="
+            !todo.done ? 'Done' : 'Undo'
+          "
         ></button>
 
         <input
@@ -130,7 +136,7 @@
             todo.done ? 'done' : ''
           }}"
 
-          jr-textcontent.bind="todo.description"
+          jr-text-content.bind="todo.description"
         ></span>
       </a>
     </div>
