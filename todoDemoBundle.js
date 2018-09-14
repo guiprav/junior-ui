@@ -558,7 +558,8 @@ jr.updateIfEl = el => {
     el.jr.commentAnchor = null;
     indexEntry.commentAnchor = null;
   }
-  else {
+  else
+  if (document.contains(el)) {
     let tagName = el.tagName.toLowerCase();
 
     let anchor = document.createComment(
