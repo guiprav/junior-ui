@@ -808,6 +808,7 @@ jr.updateEl = el => {
 
       if (attr.name.startsWith('jr-on-')) {
         jr.updateEventAttr(el, attr.name);
+        continue;
       }
 
       let computed = attr.value =
