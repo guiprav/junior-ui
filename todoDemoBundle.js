@@ -865,7 +865,6 @@ jr.updateEl = el => {
       else
       if (isToggle) {
         if (computed) {
-          console.log('targete neimi: '+targetName);
           el.setAttribute(targetName, '');
         }
         else {
