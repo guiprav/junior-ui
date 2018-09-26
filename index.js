@@ -752,6 +752,7 @@ jr.updateEl = el => {
 
       if (attr.name.startsWith('jr-on-')) {
         jr.updateEventAttr(el, attr.name);
+        continue;
       }
 
       let computed = attr.value =
@@ -808,6 +809,7 @@ jr.updateEl = el => {
       else
       if (isToggle) {
         if (computed) {
+          console.log('targete neimi: '+targetName);
           el.setAttribute(targetName, '');
         }
         else {
