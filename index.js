@@ -225,6 +225,8 @@ jr.init = () => {
     }
 
     for (let [el, attrs] of dirtyAttrs.entries()) {
+      jr.initEl(el);
+
       let indexEntry = jr.index.get(el);
       let indexAttrs = indexEntry.attrs;
 
