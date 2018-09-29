@@ -103,6 +103,8 @@
 
     <div class="todoList" jr-list="for todo of filteredTodos">
       <a
+        jr-ref="todo.rootEl"
+
         jr-class="todoBlock panel-block {{
           todo.done ? 'is-active' : ''
         }}"

@@ -747,6 +747,11 @@ jr.updateEl = el => {
         continue;
       }
 
+      if (attr.name === 'jr-ref') {
+        scope.set(el.getAttribute('jr-ref'), el);
+        continue;
+      }
+
       if (attr.name === 'jr-list') {
         jr.updateListEl(el);
         continue;
